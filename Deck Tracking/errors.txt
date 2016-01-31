@@ -1,0 +1,11 @@
+
+			The error was:
+				no such column: class
+			The Query was:
+				SELECT deck_id
+		FROM tdecks
+		WHERE(
+			deckname = "newdeck" AND
+			revision = "1" AND
+			class = "Hunter"
+			)
