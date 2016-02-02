@@ -10,7 +10,7 @@ decks_schema = '''
 		created		DATE
 	)
 	'''
-	
+
 cards_schema = '''
 	CREATE TABLE tcards(
 		card_id		INTEGER		PRIMARY KEY,
@@ -24,6 +24,7 @@ conn = sqlite3.connect('hearthstone.db')
 curs = conn.cursor()
 
 curs.execute(decks_schema)
+
 curs.execute(cards_schema)
 
 conn.commit()
