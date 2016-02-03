@@ -123,7 +123,7 @@ def getCardList(deck_id, conn = None, curs = None):
 	return cardList
 
 # Returns the most recently created deck_id, or all if specified.
-def getDecks(deckName, hero, conn = None, curs = None, getAll = False,):
+def getDecks(deckName, hero, conn = None, curs = None, getAll = False):
 	conn, curs, new = checkConn(conn, curs)
 
 	selectQuery = '''SELECT deck_id
