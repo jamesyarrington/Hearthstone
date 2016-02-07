@@ -207,6 +207,22 @@ def getHighestRev(deckName, hero, conn = None, curs = None):
 	if new: conn.close()
 	return revision
 
+# Returns the deck, hero combination for the given deck_id.
+def getDeckInfo(deck_id, conn = None, curs = None):
+	conn, curs, new = checkConn(conn, curs)
+
+	selectQuery = '''SELECT deckname, hero
+		FROM tdecks
+		WHERE(
+			deck_id = "%s"
+			)
+		ORDER BY created DESC''' % deck_id
+
+	executeQuery(curs, selectQuery)
+	(deckName, hero) = curs.fetchone()
+	if new: conn.close()
+	return deckName, hero
+
 # Update a deck's created datetime to the current time.
 def updateCreatedTime(deck_id, conn = None, curs = None):
 	conn, curs, new = checkConn(conn, curs)
@@ -223,14 +239,23 @@ def updateCreatedTime(deck_id, conn = None, curs = None):
 	if new: conn.close()
 
 # Creates a new revision of a deck (or reverts to an old one) based on the cards added and removed.
-def updateDeck(deckName, hero, removedCards, addedCards, conn = None, curs = None):
+def updateDeck(deckName, hero, removedCards, addedCards, conn = None, curs = None, deck_id = None):
 	conn, curs, new = checkConn(conn, curs)
-	latestDeck = getDecks(deckName, hero, conn, curs)
+	if deck_id == None:
+		latestDeck = getDecks(deckName, hero, conn, curs)
+	else:
+		latestDeck = deck_id
 	cardList = getCardList(latestDeck, conn, curs)
 	for card in removedCards:
 		removeCard(card, cardList)
 	for card in addedCards:
 		addCard(card, cardList)
+	storeNewCardList(deckName, hero, cardList, conn, curs)
+	if new: conn.close()
+
+# Creates a new revision of a deck (or reverts to an old one), based on new deck list
+def storeNewCardList(deckName, hero, cardList, conn = None, curs = None):
+	conn, curs, new = checkConn(conn, curs)
 	sameDeck = checkRepeatDeck(deckName, hero, cardList, conn, curs)
 	if sameDeck:
 		updateCreatedTime(sameDeck, conn, curs)
@@ -238,3 +263,18 @@ def updateDeck(deckName, hero, removedCards, addedCards, conn = None, curs = Non
 		newRev = getHighestRev(deckName, hero, conn, curs) + 1
 		addCardsAndDeck(deckName, newRev, hero, cardList, conn, curs)
 	if new: conn.close()
+
+# Converts the card list to a string.
+def cardListAsString(cardList):
+	cardListString = ''
+	for i, card in enumerate(cardList):
+		cardListString += '%s: %s\n' % (i + 1, singleCardString(card))
+	return cardListString
+
+# Converts a single, (cardName, quantity) tuple, into a string
+def singleCardString(card):
+	if card[1] > 1:
+		qtyString = ' (%s)' % card[1]
+	else:
+		qtyString = ''
+	return card[0] + qtyString

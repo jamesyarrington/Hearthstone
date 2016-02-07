@@ -30,12 +30,7 @@ def promptCardList(total = 30):
 
 # Displays a numbered list of cards in the deck.
 def displayCardList(cardList):
-	for i, card in enumerate(cardList):
-		if card[1] > 1:
-			qtyString = ' (%s)' % card[1]
-		else:
-			qtyString = ''
-		print('%s: %s%s' % (i + 1, card[0], qtyString))
+	print(cardListAsString(cardList))
 
 # Prompts user to select a list of cards to remove.  Returns removed cardlist, and number of cards removed.
 def promptCardRemoval(cardList):

@@ -1,11 +1,17 @@
 
 			The error was:
-				no such column: Priest
+				database is locked
 			The Query was:
-				SELECT deck_id
-		FROM tdecks
-		WHERE(
-			deckname = 'Dragon Priest' AND
-			hero = Priest
+				INSERT INTO tdecks(
+			deckname,
+			revision,
+			hero,
+			created
 			)
-		ORDER BY created DESC
+		VALUES(
+			"test",
+			"0",
+			"test123",
+			datetime('now')
+			)
+		
