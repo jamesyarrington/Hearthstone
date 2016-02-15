@@ -1,6 +1,5 @@
 from tkinter import *
 from deckManagement import *
-from deckManagementPrompts import *
 from functools import partial
 
 # Class for the inital window.  Has buttons to go to EDIT DECK or NEW DECK.
@@ -19,30 +18,28 @@ class MainWindow:
 		self.hi_there = Button(frame, text = 'EDIT DECK', command = self.editDeck)
 		self.hi_there.pack(side = LEFT)
 
+	# Prompt the user for deckName and hero, then open the DeckCreator.
 	def newDeck(self):
 		newWindow = Toplevel(self.master)
-		di = DeckInfoWindow(newWindow, message = 'Enter the name and hero of a new deck!', new = True)
+		di = DeckInfoWindow(newWindow, message = 'Enter the name and hero of a new deck!')
 		 # Need to add check if exists later.
 
+	# Present the user with a list of buttons to select a deck to edit.
 	def editDeck(self):
 		newWindow = Toplevel(self.master)
-		di = DeckInfoWindow(newWindow, message = "Enter the name and hero of deck you'd like to edit!", new = False)
+		di = DeckSelector(newWindow, DeckCreator)
 
 # Class for the window to edit a deck.  Enter a card name in the text box, then either "ADD 1" or "ADD 2".
 # When done, hit "DONE" to add the deck into the database and close the window.
 class DeckCreator:
 
-	def __init__(self, master, deck_id, parent = False, new = False):
+	def __init__(self, master, deck_id, parent = False):
 
 		self.listDisplay = StringVar()
-		if new:
-			self.newCardList = []
-		else:
-			self.newCardList = getCardList(deck_id)
+		self.newCardList = getCardList(deck_id)
 		self.deck_id = deck_id
 		self.master = master
 		self.parent = parent
-		self.new = new
 
 		self.cardEntry = Entry(master)
 		self.cardEntry.pack()
@@ -68,11 +65,8 @@ class DeckCreator:
 
 	# Add the listed cards to the just created deck, then close the window.
 	def finish(self):
-		if self.new:
-			addCards(self.deck_id, self.newCardList)
-		else:
-			deckName, hero = getDeckInfo(self.deck_id)
-			storeNewCardList(deckName, hero, self.newCardList)
+		deckName, hero = getDeckInfo(self.deck_id)
+		storeNewCardList(deckName, hero, self.newCardList)
 		if self.parent:
 			self.parent.destroy()
 		self.master.destroy()
@@ -95,9 +89,10 @@ class ButtonArray:
 
 		self.refreshButtons()
 
-	# Remove a card from cardList, then recreate the buttons.
+	# Remove a (single) card from cardList, then recreate the buttons.
 	def deleteCard(self, card):
-		removeCard(card,self.cardList)
+		onlyOne = (card[0], 1)
+		removeCard(onlyOne, self.cardList)
 		self.refreshButtons()
 
 	# Recreate the list of card buttons by destroying all buttons, then adding a button for each card in cardList.
@@ -118,45 +113,73 @@ class ButtonArray:
 			button.destroy()
 		self.buttons = []
 
-
+# Prompt to manually enter a deck name and hero.  Creates the deck if it is a new deck.
 class DeckInfoWindow:
 
-	def __init__(self, master, message = '', new = False):
+	def __init__(self, master, message = ''):
 
 		self.newDeck = StringVar()
 		self.newHero = StringVar()
 		self.master = master
-		self.new = new
+
+		self.text0 = Label(master, text = 'Deck Name:')
+		self.text0.pack()
+		self.text0.place(x = 0, y = 0, height = 25)
 
 		self.text1 = Label(master, text = 'Deck Name:')
 		self.text1.pack()
-		self.text1.place(x = 0, y = 0, height = 25, width = 75)
+		self.text1.place(x = 0, y = 30, height = 25, width = 75)
 
 		self.text2 = Label(master, text = 'Deck Hero:')
 		self.text2.pack()
-		self.text2.place(x = 0, y = 30, height = 25, width = 75)
+		self.text2.place(x = 0, y = 60, height = 25, width = 75)
 
 		self.ok = Button(master, text = 'OK', command = self.next)
 		self.ok.pack()
-		self.ok.place(x = 0, y = 60, height = 55, width = 230)
+		self.ok.place(x = 0, y = 90, height = 55, width = 230)
 
 		self.deckEntry = Entry(master, textvariable = self.newDeck)
 		self.deckEntry.pack()
-		self.deckEntry.place(x = 80, y = 0, height = 25, width = 150)
+		self.deckEntry.place(x = 80, y = 30, height = 25, width = 150)
 
 		self.heroEntry = Entry(master, textvariable = self.newHero)
 		self.heroEntry.pack()
-		self.heroEntry.place(x = 80, y = 30, height = 25, width = 150)
+		self.heroEntry.place(x = 80, y = 60, height = 25, width = 150)
 
+	# Open the next window.  Hardcoded based on value of self.new.
 	def next(self):
 		deckName = self.newDeck.get()
 		deckHero = self.newHero.get()
-		if self.new:
-			deck_id = addDeck(deckName, 0, deckHero)
-		else:
-			deck_id = getDecks(deckName, deckHero)
+		deck_id = addDeck(deckName, 0, deckHero) # Need to add check if deck already exists - maybe.
 		newWindow = Tk()
-		dc = DeckCreator(newWindow, deck_id, self.master, self.new)
+		dc = DeckCreator(newWindow, deck_id, self.master)
+
+# Display a list of buttons, for each unique deck in the database.
+class DeckSelector:
+
+	def __init__(self, master, nextWindow):
+
+		allDecks = getDistinctDecks()
+		self.deckButtons = []
+		self.nextWindow = nextWindow
+		self.master = master
+
+		for deck in allDecks:
+			buttonText = '%s (%s)' % (deck[1], deck[2])
+			self.deckButtons += [Button(self.master, text = buttonText, command = partial(self.openNextWindow, deck[0]))]
+
+		newY = 5
+		buttonHeight = 30
+		for button in self.deckButtons:
+			button.place(x = 5, y = newY, width = 200, height = buttonHeight)
+			newY += buttonHeight		
+
+	# Open the next window, with the selected deck_id.
+	def openNextWindow(self, deck_id):
+		nextInstance = Tk()
+		next = self.nextWindow(nextInstance, deck_id, self.master)
+
+
 
 root = Tk()
 

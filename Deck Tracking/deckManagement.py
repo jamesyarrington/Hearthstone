@@ -278,3 +278,22 @@ def singleCardString(card):
 	else:
 		qtyString = ''
 	return card[0] + qtyString
+
+
+# Return a list of (deck_id, deckName, hero) tuples of the current revision of all decks.
+def getDistinctDecks(conn = None, curs = None):
+	conn, curs, new = checkConn(conn, curs)
+
+	selectQuery = '''SELECT DISTINCT deckname, hero
+		FROM tdecks'''
+
+	executeQuery(curs, selectQuery)
+
+	decks = []
+	for result in curs:
+		(deckName, hero) = result
+		deck_id = getDecks(deckName, hero) # Not using curs from parent, as it is an iterator in this loop.
+		decks += [(deck_id, deckName, hero)]
+
+	if new: conn.close()
+	return decks
