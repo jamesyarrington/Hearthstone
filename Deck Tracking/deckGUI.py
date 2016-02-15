@@ -12,11 +12,14 @@ class MainWindow:
 		frame = Frame(master)
 		frame.pack()
 
-		self.button = Button(frame, text = 'NEW DECK', fg = 'red', command = self.newDeck)
-		self.button.pack(side = LEFT)
+		self.button0 = Button(frame, text = 'NEW DECK', bg = 'green', command = self.newDeck)
+		self.button0.pack(side = LEFT)
 
-		self.hi_there = Button(frame, text = 'EDIT DECK', command = self.editDeck)
-		self.hi_there.pack(side = LEFT)
+		self.button1 = Button(frame, text = 'EDIT DECK', bg = 'red', command = self.editDeck)
+		self.button1.pack(side = LEFT)
+
+		self.button2 = Button(frame, text = 'PLAY GAME', bg = 'white', command = self.playGame)
+		self.button2.pack(side = LEFT)
 
 	# Prompt the user for deckName and hero, then open the DeckCreator.
 	def newDeck(self):
@@ -28,6 +31,11 @@ class MainWindow:
 	def editDeck(self):
 		newWindow = Toplevel(self.master)
 		di = DeckSelector(newWindow, DeckCreator)
+
+	# Present the user with a list of buttons to select a deck to play.
+	def playGame(self):
+		newWindow = Toplevel(self.master)
+		di = DeckSelector(newWindow, GameTracker)		
 
 # Class for the window to edit a deck.  Enter a card name in the text box, then either "ADD 1" or "ADD 2".
 # When done, hit "DONE" to add the deck into the database and close the window.
@@ -57,7 +65,7 @@ class DeckCreator:
 		self.done.pack()
 		self.done.place(x = 235, y = 0, height = 60, width = 60)
 
-		self.cardButtons = ButtonArray(master, self, self.newCardList)
+		self.cardButtons = ButtonArray(master, self.newCardList, self.deleteCard)
 
 	# Wrappers for inserting either 1 or two cards.
 	def addOneCard(self): self.insertCard(1)
@@ -77,22 +85,25 @@ class DeckCreator:
 		self.cardButtons.refreshButtons()
 		self.cardEntry.delete(0, 'end')
 
+ 	# Remove a (single) card from cardList, then recreate the buttons.
+	def deleteCard(self, card):
+		onlyOne = (card[0], 1)
+		removeCard(onlyOne, self.cardButtons.cardList)
+		self.cardButtons.refreshButtons()
+
 # Class for an array of buttons.  Each button displays the name of a card in cardList.
+# Clicking a button will perform a provided "buttonCommand" with the card as input.
 class ButtonArray:
 
-	def __init__(self, master, parent, startingList):
+	def __init__(self, master, startingList, buttonCommand, direction = 'VERT', pos = (5,5)):
 
 		self.cardList = startingList
 		self.master = master
-		self.parent = parent
 		self.buttons = []
+		self.buttonCommand = buttonCommand
+		self.pos = pos
+		self.direction = direction
 
-		self.refreshButtons()
-
-	# Remove a (single) card from cardList, then recreate the buttons.
-	def deleteCard(self, card):
-		onlyOne = (card[0], 1)
-		removeCard(onlyOne, self.cardList)
 		self.refreshButtons()
 
 	# Recreate the list of card buttons by destroying all buttons, then adding a button for each card in cardList.
@@ -100,12 +111,16 @@ class ButtonArray:
 	def refreshButtons(self):
 		self.clearButtons()
 		for card in self.cardList:
-			self.buttons += [Button(self.master, text = singleCardString(card), command = partial(self.deleteCard, card))]
-		newY = 75
-		buttonHeight = 30
+			self.buttons += [Button(self.master, text = singleCardString(card), command = partial(self.buttonCommand, card))]
+		(x, y) = self.pos
+		buttonWidth = 125
+		buttonHeight = 20
 		for button in self.buttons:
-			button.place(x = 5, y = newY, width = 150, height = buttonHeight)
-			newY += buttonHeight
+			button.place(x = x, y = y, width = buttonWidth, height = buttonHeight)
+			if self.direction == 'VERT':
+				y += buttonHeight + 5
+			elif self.direction == 'HORZ':
+				x += buttonWidth + 5
 
 	# Destroy all buttons.
 	def clearButtons(self):
@@ -179,10 +194,34 @@ class DeckSelector:
 		nextInstance = Tk()
 		next = self.nextWindow(nextInstance, deck_id, self.master)
 
+# Display a window that mimmicks a hearthstone game, to track played cards.
+class GameTracker:
+
+	def __init__(self, master, deck_id, parent):
+
+		self.master = master
+		self.deck_id = deck_id
+		self.parent = parent
+
+		initialCardList = getCardList(deck_id)
+		self.deck = ButtonArray(master, initialCardList, self.draw)
+		self.hand = ButtonArray(master, [], self.play, direction = 'HORZ', pos = (5, 755))
+
+	# Move card from deck to hand.
+	def draw(self, card):
+		onlyOne = (card[0], 1)
+		removeCard(onlyOne,self.deck.cardList)
+		addCard(onlyOne,self.hand.cardList)
+		self.deck.refreshButtons()
+		self.hand.refreshButtons()
+
+	# Remove card from hand.
+	def play(self, card):
+		onlyOne = (card[0], 1)
+		removeCard(onlyOne,self.hand.cardList)
+		self.hand.refreshButtons()
 
 
 root = Tk()
-
 app = MainWindow(root)
-
 root.mainloop()
