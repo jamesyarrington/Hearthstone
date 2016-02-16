@@ -1,4 +1,5 @@
 import sqlite3
+import datetime
 
 defaultDB = 'hearthstone.db'
 errorLog = 'errors.txt'
@@ -40,6 +41,13 @@ def executeQuery(curs,query,logFile = errorLog):
 		logFile.close()
 		raise e
 
+# I think it is dumb that I have to make a function to clean up
+# getting timestamp of current time.
+def strNow(format = '%Y-%m-%d %H:%M:%S'):
+	dummytime = datetime.datetime(1, 1, 1, 1, 1, 1)
+	now = dummytime.now()
+	return now.strftime(format)
+
 # Add a deck to the tdecks table.  Return the deck_id.
 def addDeck(deckName, revision, hero, conn = None, curs = None):
 	conn, curs, new = checkConn(conn, curs)
@@ -55,9 +63,9 @@ def addDeck(deckName, revision, hero, conn = None, curs = None):
 			"%s",
 			"%s",
 			"%s",
-			datetime('now')
+			"%s"
 			)
-		''' % (table, deckName, revision, hero)
+		''' % (table, deckName, revision, hero, strNow())
 
 	executeQuery(curs,insertQuery)
 	conn.commit()
@@ -229,10 +237,10 @@ def updateCreatedTime(deck_id, conn = None, curs = None):
 
 	updateQuery = '''UPDATE tdecks
 		SET
-			created = datetime('now')
+			created = "%s"
 		WHERE(
 			deck_id = %s
-			)''' % deck_id
+			)''' % (deck_id, strNow())
 
 	executeQuery(curs, updateQuery)
 	conn.commit()

@@ -1,5 +1,6 @@
 from tkinter import *
 from deckManagement import *
+from gameManagement import *
 from functools import partial
 
 # Class for the inital window.  Has buttons to go to EDIT DECK or NEW DECK.
@@ -202,10 +203,30 @@ class GameTracker:
 		self.master = master
 		self.deck_id = deck_id
 		self.parent = parent
+		self.turn = 0
 
 		initialCardList = getCardList(deck_id)
 		self.deck = ButtonArray(master, initialCardList, self.draw)
 		self.hand = ButtonArray(master, [], self.play, direction = 'HORZ', pos = (5, 755))
+
+		self.game_id = startGame(deck_id)
+
+		self.turnCounter = Label(master, text = str(self.turn))
+		self.turnCounter.pack()
+		self.turnCounter.place(x = 600, y =370)
+
+		self.button0 = Button(master, text = 'NEXT TURN', bg = 'yellow', command = self.nextTurn)
+		self.button0.pack()
+		self.button0.place(x = 600, y = 400, height = 50, width = 205)
+
+		self.button1 = Button(master, text = 'WIN GAME', bg = 'green', command = partial(self.endGame, 1))
+		self.button1.pack()
+		self.button1.place(x = 600, y = 455, height = 50, width = 100)
+
+
+		self.button1 = Button(master, text = 'LOSE GAME', bg = 'red', command = partial(self.endGame, 1))
+		self.button1.pack()
+		self.button1.place(x = 705, y = 455, height = 50, width = 100)
 
 	# Move card from deck to hand.
 	def draw(self, card):
@@ -214,12 +235,31 @@ class GameTracker:
 		addCard(onlyOne,self.hand.cardList)
 		self.deck.refreshButtons()
 		self.hand.refreshButtons()
+		recordDraw(self.game_id, card[0], self.turn)
 
 	# Remove card from hand.
 	def play(self, card):
 		onlyOne = (card[0], 1)
 		removeCard(onlyOne,self.hand.cardList)
 		self.hand.refreshButtons()
+		recordPlay(self.game_id, card[0], self.turn)
+
+	# Advance the turn counter.
+	def nextTurn(self):
+		self.turn += 1
+
+		self.turnCounter.destroy()
+
+		self.turnCounter = Label(self.master, text = str(self.turn))
+		self.turnCounter.pack()
+		self.turnCounter.place(x = 600, y =370)
+
+	def endGame(self, result):
+		finishGame(self.game_id, result = result)
+		if self.parent:
+			self.parent.destroy()
+		self.master.destroy()
+
 
 
 root = Tk()

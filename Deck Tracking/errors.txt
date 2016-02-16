@@ -2,16 +2,18 @@
 			The error was:
 				database is locked
 			The Query was:
-				INSERT INTO tdecks(
-			deckname,
-			revision,
-			hero,
-			created
+				INSERT INTO tgames(
+			deck_id,
+			opp_hero,
+			opp_deck,
+			win,
+			time
 			)
 		VALUES(
-			"test",
-			"0",
-			"test123",
-			datetime('now')
+			"9",
+			"UNKNOWN",
+			"UNKNOWN",
+			"-1",
+			"2016-02-15 16:12:29"
 			)
 		
