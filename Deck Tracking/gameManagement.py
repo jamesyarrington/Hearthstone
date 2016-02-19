@@ -57,15 +57,15 @@ def finishGame(game_id, opponentHero = 'UNKNOWN', opponentDeck = 'UNKNOWN', resu
 
 	if new: conn.close()
 
-# Record the draw of a card in the database.
-def recordDraw(game_id, cardName, turn, conn = None, curs = None):
+# Record an action in the database.
+def recordAction(game_id, cardName, action, turn, conn = None, curs = None):
 	conn, curs, new = checkConn(conn, curs)
 
 	insertQuery = '''INSERT INTO tplays(
 			game_id,
 			cardName,
-			turndrawn,
-			turnplayed
+			action,
+			turn
 		)
 		VALUES(
 			"%s",
@@ -73,7 +73,7 @@ def recordDraw(game_id, cardName, turn, conn = None, curs = None):
 			"%s",
 			"%s"
 		)
-		''' % (game_id, cardName, turn, 0)
+		''' % (game_id, cardName, action, turn)
 
 	executeQuery(curs, insertQuery)
 	conn.commit()

@@ -66,7 +66,7 @@ class DeckCreator:
 		self.done.pack()
 		self.done.place(x = 235, y = 0, height = 60, width = 60)
 
-		self.cardButtons = ButtonArray(master, self.newCardList, self.deleteCard)
+		self.cardButtons = ButtonArray(master, self.newCardList, self.deleteCard, pos = (5, 75))
 
 	# Wrappers for inserting either 1 or two cards.
 	def addOneCard(self): self.insertCard(1)
@@ -96,7 +96,7 @@ class DeckCreator:
 # Clicking a button will perform a provided "buttonCommand" with the card as input.
 class ButtonArray:
 
-	def __init__(self, master, startingList, buttonCommand, direction = 'VERT', pos = (5,5)):
+	def __init__(self, master, startingList, buttonCommand, direction = 'VERT', pos = (5, 5)):
 
 		self.cardList = startingList
 		self.master = master
@@ -205,6 +205,8 @@ class GameTracker:
 		self.parent = parent
 		self.turn = 0
 
+		self.oppHero = StringVar()
+
 		initialCardList = getCardList(deck_id)
 		self.deck = ButtonArray(master, initialCardList, self.draw)
 		self.hand = ButtonArray(master, [], self.play, direction = 'HORZ', pos = (5, 755))
@@ -223,10 +225,29 @@ class GameTracker:
 		self.button1.pack()
 		self.button1.place(x = 600, y = 455, height = 50, width = 100)
 
-
 		self.button1 = Button(master, text = 'LOSE GAME', bg = 'red', command = partial(self.endGame, 1))
 		self.button1.pack()
 		self.button1.place(x = 705, y = 455, height = 50, width = 100)
+
+		self.text0 = Label(master, text = 'Opp. Hero:')
+		self.text0.pack()
+		self.text0.place(x = 175, y = 30, height = 25)
+
+		self.text0 = Label(master, text = 'Opp. Hero:')
+		self.text0.pack()
+		self.text0.place(x = 175, y = 30, height = 25)
+
+		self.oppHeroEntry = Entry(master)
+		self.oppHeroEntry.pack()
+		self.oppHeroEntry.place(x = 250, y = 30, height = 25, width = 150)
+
+		self.text1 = Label(master, text = 'Opp. Deck:')
+		self.text1.pack()
+		self.text1.place(x = 175, y = 60, height = 25)
+
+		self.oppDeckEntry = Entry(master)
+		self.oppDeckEntry.pack()
+		self.oppDeckEntry.place(x = 250, y = 60, height = 25, width = 150)
 
 	# Move card from deck to hand.
 	def draw(self, card):
@@ -235,14 +256,14 @@ class GameTracker:
 		addCard(onlyOne,self.hand.cardList)
 		self.deck.refreshButtons()
 		self.hand.refreshButtons()
-		recordDraw(self.game_id, card[0], self.turn)
+		recordAction(self.game_id, card[0], 'DRAW', self.turn)
 
 	# Remove card from hand.
 	def play(self, card):
 		onlyOne = (card[0], 1)
 		removeCard(onlyOne,self.hand.cardList)
 		self.hand.refreshButtons()
-		recordPlay(self.game_id, card[0], self.turn)
+		recordAction(self.game_id, card[0], 'PLAY', self.turn)
 
 	# Advance the turn counter.
 	def nextTurn(self):
@@ -255,7 +276,7 @@ class GameTracker:
 		self.turnCounter.place(x = 600, y =370)
 
 	def endGame(self, result):
-		finishGame(self.game_id, result = result)
+		finishGame(self.game_id, result = result, opponentHero = self.oppHeroEntry.get(), opponentDeck = self.oppDeckEntry.get())
 		if self.parent:
 			self.parent.destroy()
 		self.master.destroy()

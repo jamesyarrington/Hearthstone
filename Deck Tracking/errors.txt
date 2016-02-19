@@ -1,19 +1,10 @@
 
 			The error was:
-				database is locked
+				near "00": syntax error
 			The Query was:
-				INSERT INTO tgames(
-			deck_id,
-			opp_hero,
-			opp_deck,
-			win,
-			time
+				UPDATE tdecks
+		SET
+			created = "10"
+		WHERE(
+			deck_id = 2016-02-19 00:36:27
 			)
-		VALUES(
-			"9",
-			"UNKNOWN",
-			"UNKNOWN",
-			"-1",
-			"2016-02-15 16:12:29"
-			)
-		

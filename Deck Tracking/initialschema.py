@@ -36,8 +36,8 @@ plays_schema = '''
 		play_id		INTEGER		PRIMARY KEY,
 		game_id		INTEGER,
 		cardname	TEXT,
-		turndrawn	INTEGER,
-		turnplayed	INTEGER
+		action		TEXT,
+		turn		INTEGER
 	)
 	'''
 
@@ -47,7 +47,7 @@ curs = conn.cursor()
 
 #curs.execute(decks_schema)
 #curs.execute(cards_schema)
-curs.execute(games_schema)
+#curs.execute(games_schema)
 curs.execute(plays_schema)
 
 conn.commit()

@@ -240,7 +240,7 @@ def updateCreatedTime(deck_id, conn = None, curs = None):
 			created = "%s"
 		WHERE(
 			deck_id = %s
-			)''' % (deck_id, strNow())
+			)''' % (strNow(), deck_id)
 
 	executeQuery(curs, updateQuery)
 	conn.commit()
