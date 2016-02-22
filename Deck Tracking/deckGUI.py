@@ -225,13 +225,9 @@ class GameTracker:
 		self.button1.pack()
 		self.button1.place(x = 600, y = 455, height = 50, width = 100)
 
-		self.button1 = Button(master, text = 'LOSE GAME', bg = 'red', command = partial(self.endGame, 1))
+		self.button1 = Button(master, text = 'LOSE GAME', bg = 'red', command = partial(self.endGame, 0))
 		self.button1.pack()
 		self.button1.place(x = 705, y = 455, height = 50, width = 100)
-
-		self.text0 = Label(master, text = 'Opp. Hero:')
-		self.text0.pack()
-		self.text0.place(x = 175, y = 30, height = 25)
 
 		self.text0 = Label(master, text = 'Opp. Hero:')
 		self.text0.pack()
@@ -248,6 +244,15 @@ class GameTracker:
 		self.oppDeckEntry = Entry(master)
 		self.oppDeckEntry.pack()
 		self.oppDeckEntry.place(x = 250, y = 60, height = 25, width = 150)
+
+		self.text2 = Label(master, text = 'Game Mode:')
+		self.text2.pack()
+		self.text2.place(x = 175, y = 90, height = 25)
+
+		self.gameModeEntry = Entry(master)
+		self.gameModeEntry.pack()
+		self.gameModeEntry.place(x = 250, y = 90, height = 25, width = 150)
+
 
 	# Move card from deck to hand.
 	def draw(self, card):
@@ -276,7 +281,7 @@ class GameTracker:
 		self.turnCounter.place(x = 600, y =370)
 
 	def endGame(self, result):
-		finishGame(self.game_id, result = result, opponentHero = self.oppHeroEntry.get(), opponentDeck = self.oppDeckEntry.get())
+		finishGame(self.game_id, result = result, opponentHero = self.oppHeroEntry.get(), opponentDeck = self.oppDeckEntry.get(), gameMode = self.gameModeEntry.get())
 		if self.parent:
 			self.parent.destroy()
 		self.master.destroy()

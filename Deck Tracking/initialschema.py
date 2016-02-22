@@ -26,6 +26,7 @@ games_schema = '''
 		deck_id		INTEGER,
 		opp_hero	TEXT,
 		opp_deck	TEXT,
+		game_mode	TEXT,
 		win			INTEGER,
 		time		DATE
 	)

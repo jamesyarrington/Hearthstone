@@ -39,18 +39,19 @@ def startGame(deck_id, opponentHero = 'UNKNOWN', opponentDeck = 'UNKNOWN', resul
 	return game_id
 
 # Update a previously created game.
-def finishGame(game_id, opponentHero = 'UNKNOWN', opponentDeck = 'UNKNOWN', result = -1, conn = None, curs = None):
+def finishGame(game_id, opponentHero = 'UNKNOWN', opponentDeck = 'UNKNOWN', gameMode = 'UNKNOWN', result = -1, conn = None, curs = None):
 	conn, curs, new = checkConn(conn, curs)
 
 	updateQuery = '''UPDATE tgames
 		SET
 			opp_hero = "%s",
 			opp_deck = "%s",
+			game_mode = "%s",
 			win = "%s"
 		WHERE(
 			game_id = "%s"
 		)
-		''' % (opponentHero, opponentDeck, result, game_id)
+		''' % (opponentHero, opponentDeck, gameMode, result, game_id)
 
 	executeQuery(curs, updateQuery)
 	conn.commit()
