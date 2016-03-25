@@ -1,10 +1,6 @@
 
 			The error was:
-				near "00": syntax error
+				no such table: tdecks
 			The Query was:
-				UPDATE tdecks
-		SET
-			created = "10"
-		WHERE(
-			deck_id = 2016-02-19 00:36:27
-			)
+				SELECT DISTINCT deckname, hero
+		FROM tdecks

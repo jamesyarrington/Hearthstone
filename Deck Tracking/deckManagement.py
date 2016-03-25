@@ -1,7 +1,8 @@
 import sqlite3
 import datetime
+import db_globals
 
-defaultDB = 'hearthstone.db'
+
 errorLog = 'errors.txt'
 sampleCards = [('Magma Rager', 2),
 				('Goldshire Footman', 2),
@@ -10,19 +11,19 @@ sampleCards = [('Magma Rager', 2),
 				('Fiery War Axe', 2)]
 
 # Open a connection.
-def openConn(dbName = defaultDB):
+def openConn(dbName):
 	conn = sqlite3.connect(dbName)
 	curs = conn.cursor()
 	return conn, curs
 
 # If not given a connection and cursor, create new ones.
-def checkConn(conn, curs, dbName = defaultDB):
+def checkConn(conn, curs):
 	if conn:
 		if not curs:
 			curs = conn.cursor()
 		return conn, curs, False
 	else:
-		curs, conn = openConn(dbName)
+		curs, conn = openConn(db_globals.dbName)
 		return curs, conn, True
 
 # Excecute a query, and record exception and sql query into log file.
@@ -305,3 +306,36 @@ def getDistinctDecks(conn = None, curs = None):
 
 	if new: conn.close()
 	return decks
+
+# Returns a deck_id : revision dictionary for the given deckName, hero input.
+def getAllRevs(deckName, hero, conn = None, curs = None):
+	conn, curs, new = checkConn(conn, curs)
+
+	deck_ids = getDecks(deckName, hero, conn, curs, getAll = True)
+
+	idsAndRevs = {}
+
+	for deck_id in deck_ids:
+		idsAndRevs[deck_id] = getRev(deck_id, conn, curs)
+
+	if new: conn.close()
+
+	return idsAndRevs
+
+
+# Returns the revision of the given deck.
+def getRev(deck_id, conn = None, curs = None):
+	conn, curs, new = checkConn(conn, curs)
+
+	selectQuery = '''SELECT revision
+		FROM tdecks
+		WHERE(
+			deck_id = %s
+			)''' % deck_id
+
+	executeQuery(curs, selectQuery)
+	revision = curs.fetchone()
+
+	if new: conn.close()
+
+	return revision

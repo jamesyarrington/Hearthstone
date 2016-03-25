@@ -3,6 +3,10 @@ from deckManagement import *
 from gameManagement import *
 from functools import partial
 
+import db_globals
+db_globals.dbName = 'hearthstone.db'
+
+
 # Class for the inital window.  Has buttons to go to EDIT DECK or NEW DECK.
 class MainWindow:
 
@@ -66,7 +70,7 @@ class DeckCreator:
 		self.done.pack()
 		self.done.place(x = 235, y = 0, height = 60, width = 60)
 
-		self.cardButtons = ButtonArray(master, self.newCardList, self.deleteCard, pos = (5, 75))
+		self.cardButtons = ButtonArray(master, self.newCardList, buttonLeftClick = self.deleteCard, pos = (5, 75))
 
 	# Wrappers for inserting either 1 or two cards.
 	def addOneCard(self): self.insertCard(1)
@@ -87,21 +91,36 @@ class DeckCreator:
 		self.cardEntry.delete(0, 'end')
 
  	# Remove a (single) card from cardList, then recreate the buttons.
-	def deleteCard(self, card):
+	def deleteCard(self, eventCatcher, card):
 		onlyOne = (card[0], 1)
 		removeCard(onlyOne, self.cardButtons.cardList)
 		self.cardButtons.refreshButtons()
 
 # Class for an array of buttons.  Each button displays the name of a card in cardList.
-# Clicking a button will perform a provided "buttonCommand" with the card as input.
+# Clicking a button will perform a provided command, based on mouse click, with the card as input.
 class ButtonArray:
 
-	def __init__(self, master, startingList, buttonCommand, direction = 'VERT', pos = (5, 5)):
+	def __init__(self, master, startingList, direction = 'VERT', pos = (5, 5), 
+		buttonLeftClick = False,
+		buttonRightClick = False,
+		buttonMidClick = False
+		):
 
 		self.cardList = startingList
 		self.master = master
 		self.buttons = []
-		self.buttonCommand = buttonCommand
+		if buttonLeftClick:
+			self.buttonLeftClick = buttonLeftClick
+		else:
+			self.buttonLeftClick = self.dummy
+		if buttonRightClick:
+			self.buttonRightClick = buttonRightClick
+		else:
+			self.buttonRightClick = self.dummy
+		if buttonMidClick:
+			self.buttonMidClick = buttonMidClick
+		else:
+			self.buttonMidClick = self.dummy
 		self.pos = pos
 		self.direction = direction
 
@@ -112,9 +131,12 @@ class ButtonArray:
 	def refreshButtons(self):
 		self.clearButtons()
 		for card in self.cardList:
-			self.buttons += [Button(self.master, text = singleCardString(card), command = partial(self.buttonCommand, card))]
+			self.buttons += [Button(self.master, text = singleCardString(card))]
+			self.buttons[-1].bind('<Button-1>', partial(self.buttonLeftClick, card = card))			
+			self.buttons[-1].bind('<Button-3>', partial(self.buttonRightClick, card = card))
+			self.buttons[-1].bind('<Button-2>', partial(self.buttonMidClick, card = card))
 		(x, y) = self.pos
-		buttonWidth = 125
+		buttonWidth = 150
 		buttonHeight = 20
 		for button in self.buttons:
 			button.place(x = x, y = y, width = buttonWidth, height = buttonHeight)
@@ -128,6 +150,10 @@ class ButtonArray:
 		for button in self.buttons:
 			button.destroy()
 		self.buttons = []
+
+	def dummy(self, card):
+		print('You dummy!  I have no idea what you wanted to do with %s!' % card[0])
+
 
 # Prompt to manually enter a deck name and hero.  Creates the deck if it is a new deck.
 class DeckInfoWindow:
@@ -208,8 +234,16 @@ class GameTracker:
 		self.oppHero = StringVar()
 
 		initialCardList = getCardList(deck_id)
-		self.deck = ButtonArray(master, initialCardList, self.draw)
-		self.hand = ButtonArray(master, [], self.play, direction = 'HORZ', pos = (5, 755))
+		self.deck = ButtonArray(master, initialCardList,
+			buttonLeftClick = self.draw,
+			buttonRightClick = partial(self.removeFromDeck, action = 'DISCARD - DECK'),
+			buttonMidClick = partial(self.removeFromDeck, action = 'PULL - DECK')
+			)
+		self.hand = ButtonArray(master, [], direction = 'HORZ', pos = (5, 755),
+			buttonLeftClick = partial(self.removeFromHand, action = 'PLAY'),
+			buttonRightClick = partial(self.removeFromHand, action = 'DISCARD - HAND'),
+			buttonMidClick = partial(self.removeFromHand, action = 'PULL - HAND')
+			)
 
 		self.game_id = startGame(deck_id)
 
@@ -225,9 +259,9 @@ class GameTracker:
 		self.button1.pack()
 		self.button1.place(x = 600, y = 455, height = 50, width = 100)
 
-		self.button1 = Button(master, text = 'LOSE GAME', bg = 'red', command = partial(self.endGame, 0))
-		self.button1.pack()
-		self.button1.place(x = 705, y = 455, height = 50, width = 100)
+		self.button2 = Button(master, text = 'LOSE GAME', bg = 'red', command = partial(self.endGame, 0))
+		self.button2.pack()
+		self.button2.place(x = 705, y = 455, height = 50, width = 100)
 
 		self.text0 = Label(master, text = 'Opp. Hero:')
 		self.text0.pack()
@@ -253,9 +287,33 @@ class GameTracker:
 		self.gameModeEntry.pack()
 		self.gameModeEntry.place(x = 250, y = 90, height = 25, width = 150)
 
+		self.text3 = Label(master, text = 'Add card:')
+		self.text3.pack()
+		self.text3.place(x = 500, y = 510, height = 25)
+
+		self.newCard = Entry(master)
+		self.newCard.pack()
+		self.newCard.place(x = 500, y = 540, height = 25, width = 150)
+
+		self.text4 = Label(master, text = 'Created by:')
+		self.text4.pack()
+		self.text4.place(x = 500, y = 570, height = 25)
+
+		self.newCardOrigin = Entry(master)
+		self.newCardOrigin.pack()
+		self.newCardOrigin.place(x = 500, y = 600, height = 25, width = 150)
+
+		self.button3 = Button(master, text = 'ADD TO DECK', bg = 'orange', command = partial(self.createCard, 'DECK'))
+		self.button3.pack()
+		self.button3.place(x = 655, y = 510, height = 55, width = 100)
+
+		self.button4 = Button(master, text = 'ADD TO HAND', bg = 'blue', command = partial(self.createCard, 'HAND'))
+		self.button4.pack()
+		self.button4.place(x = 655, y = 570, height = 55, width = 100)
+
 
 	# Move card from deck to hand.
-	def draw(self, card):
+	def draw(self, eventCatcher, card):
 		onlyOne = (card[0], 1)
 		removeCard(onlyOne,self.deck.cardList)
 		addCard(onlyOne,self.hand.cardList)
@@ -263,12 +321,19 @@ class GameTracker:
 		self.hand.refreshButtons()
 		recordAction(self.game_id, card[0], 'DRAW', self.turn)
 
-	# Remove card from hand.
-	def play(self, card):
+	# Remove card from hand, marking as played.
+	def removeFromHand(self, eventCatcher, action, card):
 		onlyOne = (card[0], 1)
 		removeCard(onlyOne,self.hand.cardList)
 		self.hand.refreshButtons()
-		recordAction(self.game_id, card[0], 'PLAY', self.turn)
+		recordAction(self.game_id, card[0], action, self.turn)
+
+	# Remove a card from your deck, without putting it in your hand.
+	def removeFromDeck(self, eventCatcher, action, card):
+		onlyOne = (card[0], 1)
+		removeCard(onlyOne,self.deck.cardList)
+		self.deck.refreshButtons()
+		recordAction(self.game_id, card[0], action, self.turn)
 
 	# Advance the turn counter.
 	def nextTurn(self):
@@ -280,13 +345,29 @@ class GameTracker:
 		self.turnCounter.pack()
 		self.turnCounter.place(x = 600, y =370)
 
+	# Record the result of the game, any information entered in the entry boxes, then close this window, and the parent window.
 	def endGame(self, result):
 		finishGame(self.game_id, result = result, opponentHero = self.oppHeroEntry.get(), opponentDeck = self.oppDeckEntry.get(), gameMode = self.gameModeEntry.get())
 		if self.parent:
 			self.parent.destroy()
 		self.master.destroy()
 
-
+	# Add a card to either HAND or DECK.
+	def createCard(self, where):
+		newCard = self.newCard.get()
+		newCardOrigin = self.newCardOrigin.get()
+		if newCardOrigin:
+			newCardOrigin = ' (%s)' % newCardOrigin
+		newCardName = newCard + newCardOrigin
+		self.newCard.delete(0, 'end')
+		self.newCardOrigin.delete(0, 'end')
+		if where == 'HAND':
+			addCard((newCardName, 1),self.hand.cardList)
+			self.hand.refreshButtons()
+		elif where == 'DECK':
+			addCard((newCardName, 1),self.deck.cardList)
+			self.deck.refreshButtons()
+		recordAction(self.game_id, newCardName, 'CREATED - ' + where, self.turn)
 
 root = Tk()
 app = MainWindow(root)
