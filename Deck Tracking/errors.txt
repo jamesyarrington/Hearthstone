@@ -1,6 +1,24 @@
 
 			The error was:
-				no such table: tdecks
+				near "jin": syntax error
 			The Query was:
-				SELECT DISTINCT deckname, hero
-		FROM tdecks
+				SELECT DISTINCT win, game_id
+			FROM tgames NATURAL JOIN tplays
+			
+WHERE(
+(deck_id=27
+OR deck_id=5)
+AND ((
+			cardname = 'Vol'jin'
+			AND action = 'PLAY'
+			)
+OR (
+			cardname = 'Vol'jin'
+			AND action = 'PULL - DECK'
+			)
+OR (
+			cardname = 'Vol'jin'
+			AND action = 'PULL - HAND'
+			)
+)
+)

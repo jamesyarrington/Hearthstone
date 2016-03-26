@@ -101,21 +101,21 @@ def getDrawnCard(game_id, cardName, conn = None, curs = None):
 	if new: conn.close()
 	return play_id
 
-# Record the play of an already drawn card.
-def recordPlay(game_id, cardName, turn, conn = None, curs = None):
-	conn, curs, new = checkConn(conn, curs)
+# # Record the play of an already drawn card.
+# def recordPlay(game_id, cardName, turn, conn = None, curs = None):
+# 	conn, curs, new = checkConn(conn, curs)
 
-	play_id = getDrawnCard(game_id, cardName, conn, curs)
+# 	play_id = getDrawnCard(game_id, cardName, conn, curs)
 
-	updateQuery = '''UPDATE tplays
-		SET
-			turnplayed = "%s"
-		WHERE(
-			play_id = "%s"
-		)
-		''' % (turn, play_id)
+# 	updateQuery = '''UPDATE tplays
+# 		SET
+# 			turnplayed = "%s"
+# 		WHERE(
+# 			play_id = "%s"
+# 		)
+# 		''' % (turn, play_id)
 
-	executeQuery(curs, updateQuery)
-	conn.commit()
+# 	executeQuery(curs, updateQuery)
+# 	conn.commit()
 
-	if new: conn.close()
+# 	if new: conn.close()
