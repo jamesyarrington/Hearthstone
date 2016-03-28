@@ -81,24 +81,45 @@ class Deck:
 
 		return (wins, losses)
 
-	# returns a (wins, losses) tuple for a specific card in the deck.
+	# # returns a (wins, losses) tuple for a specific card in the deck.
+	# # A win only counts if the card was played (or pulled).
+	# # A loss counts if the card was drawn (or pulled from deck).
+	# def getCardRecord(self, cardName, conditions = {}):
+	# 	winConditions = copyDict(conditions)
+	# 	lossConditions = copyDict(conditions)
+
+	# 	winConditions['PLAY'] = cardName
+	# 	winConditions['PULL - HAND'] = cardName
+	# 	winConditions['PULL - DECK'] = cardName
+
+	# 	lossConditions['DRAW'] = cardName
+	# 	lossConditions['PULL - DECK'] = cardName
+
+	# 	wins = self.getPastResults(winConditions)[0]
+	# 	losses = self.getPastResults(lossConditions)[1]
+
+	# 	return (wins, losses)
+
+
+	# returns a (wins, losses) tuple for a specific card in the deck, if 'CARD REC' is in the dict.
 	# A win only counts if the card was played (or pulled).
 	# A loss counts if the card was drawn (or pulled from deck).
-	def getCardRecord(self, cardName, conditions = {}):
-		winConditions = copyDict(conditions)
-		lossConditions = copyDict(conditions)
+	def getCardRecord(self, conditions = {}):
+		try: cardName = conditions['CARD REC']
+		except: return self.getPastResults(conditions)
+		else:
+			winConditions = copyDict(conditions)
+			lossConditions = copyDict(conditions)
 
-		winConditions['PLAY'] = cardName
-		winConditions['PULL - HAND'] = cardName
-		winConditions['PULL - DECK'] = cardName
+			winConditions['PLAY'] = cardName
+			winConditions['PULL - HAND'] = cardName
+			winConditions['PULL - DECK'] = cardName
 
-		lossConditions['DRAW'] = cardName
-		lossConditions['PULL - DECK'] = cardName
+			lossConditions['DRAW'] = cardName
+			lossConditions['PULL - DECK'] = cardName
 
-		wins = self.getPastResults(winConditions)[0]
-		losses = self.getPastResults(lossConditions)[1]
+			return (self.getPastResults(winConditions)[0], self.getPastResults(lossConditions)[1])
 
-		return (wins, losses)
 
 	# Returns a (wins, losses) tuple for when the card was drawn on turn 0 or 1.
 	def getMulliganRecord(self, cardName, conditions = {}):

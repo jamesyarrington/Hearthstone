@@ -1,6 +1,7 @@
 from tkinter import *
 from deckManagement import *
 from gameManagement import *
+from deckStatistics import *
 from functools import partial
 
 import db_globals
@@ -26,6 +27,9 @@ class MainWindow:
 		self.button2 = Button(frame, text = 'PLAY GAME', bg = 'white', command = self.playGame)
 		self.button2.pack(side = LEFT)
 
+		self.button3 = Button(frame, text = 'DECK STATS', bg = 'white', command = self.deckStats)
+		self.button3.pack(side = LEFT)
+
 	# Prompt the user for deckName and hero, then open the DeckCreator.
 	def newDeck(self):
 		newWindow = Toplevel(self.master)
@@ -40,7 +44,12 @@ class MainWindow:
 	# Present the user with a list of buttons to select a deck to play.
 	def playGame(self):
 		newWindow = Toplevel(self.master)
-		di = DeckSelector(newWindow, GameTracker)		
+		di = DeckSelector(newWindow, GameTracker)
+
+	# Present the user with a list of buttons to select a deck to play.
+	def deckStats(self):
+		newWindow = Toplevel(self.master)
+		di = DeckSelector(newWindow, DeckStats)
 
 # Class for the window to edit a deck.  Enter a card name in the text box, then either "ADD 1" or "ADD 2".
 # When done, hit "DONE" to add the deck into the database and close the window.
@@ -188,12 +197,12 @@ class DeckInfoWindow:
 		self.heroEntry.pack()
 		self.heroEntry.place(x = 80, y = 60, height = 25, width = 150)
 
-	# Open the next window.  Hardcoded based on value of self.new.
+	# Open the next window.
 	def next(self):
 		deckName = self.newDeck.get()
 		deckHero = self.newHero.get()
 		deck_id = addDeck(deckName, 0, deckHero) # Need to add check if deck already exists - maybe.
-		newWindow = Tk()
+		newWindow = Toplevel(self.master)
 		dc = DeckCreator(newWindow, deck_id, self.master)
 
 # Display a list of buttons, for each unique deck in the database.
@@ -218,7 +227,7 @@ class DeckSelector:
 
 	# Open the next window, with the selected deck_id.
 	def openNextWindow(self, deck_id):
-		nextInstance = Tk()
+		nextInstance = Toplevel(self.master)
 		next = self.nextWindow(nextInstance, deck_id, self.master)
 
 # Display a window that mimmicks a hearthstone game, to track played cards.
@@ -368,6 +377,72 @@ class GameTracker:
 			addCard((newCardName, 1),self.deck.cardList)
 			self.deck.refreshButtons()
 		recordAction(self.game_id, newCardName, 'CREATED - ' + where, self.turn)
+
+
+# Open a window to view the win-loss record of a particular deck, based on options selected.
+class DeckStats:
+
+	def __init__(self, master, deck_id, parent):
+
+		self.master = master
+		self.deck_id = deck_id
+		self.parent = parent
+
+		self.deck = Deck(deck_id)
+		
+		self.t = StringVar()
+
+		self.overallRecord = Label(self.master, textvariable = self.t)
+		self.overallRecord.pack()
+		self.overallRecord.place(x = 5, y = 5, height = 50, width = 100)
+
+		self.options = CheckButtonList(self.master, self.refreshResults,
+				[
+					{'onvalue' : 'opp_hero'	,	'label' : 'Opposing Hero:'	},
+					{'onvalue' : 'opp_deck'	,	'label' : 'Opposing Deck:'	},
+					{'onvalue' : 'game_mode',	'label' : 'Game Mode:'		},
+					{'onvalue' : 'PLAY'		,	'label' : 'Played Card:'	},
+					{'onvalue' : 'DRAW'		,	'label' : 'Drawn Card:'		},
+					{'onvalue' : 'CARD REC'	,	'label' : 'Card Record:'	}
+				]
+			)
+
+		self.refreshResults()
+
+	# Display record based on options selected
+	def refreshResults(self):
+		conditions = {}
+		for i, pressed in enumerate(self.options.pressedButtons):
+			if pressed.get():
+				conditions[pressed.get()] = self.options.entryFields[i].get()
+		self.t.set('Wins:     %s\nLosses:   %s' % self.deck.getCardRecord(conditions))
+
+
+# Accept a list of {label : '', on_value : ''} dicts to create a multi-selection checkbutton list.
+class CheckButtonList:
+
+	def __init__(self, master, function, selections):
+
+		self.pressedButtons = []
+		self.choiceButtons = []
+		self.entryFields = []
+		self.columnHeaders = []
+
+		width = 125
+		height = 25
+		x = 200
+		y = 5
+
+		for i, selection in enumerate(selections):
+
+			self.pressedButtons += [StringVar()]
+			self.choiceButtons += [Checkbutton(master, text = selection['label'], command = function, var = self.pressedButtons[i], onvalue = selection['onvalue'], offvalue = '', anchor = W)]
+			self.entryFields += [Entry(master)]
+
+		for i in range(len(self.choiceButtons)):
+			self.choiceButtons[i].place(x = x, y = y, width = width, height = height)
+			self.entryFields[i].place(x = x + width, y = y, width = width, height = height)
+			y += height + 5
 
 root = Tk()
 app = MainWindow(root)

@@ -206,7 +206,10 @@ class Test_getPastResults(TestCase):
 			recordAction(game_id, 'Zombie Chow', 'DRAW', 0)
 			finishGame(game_id, result = 1)
 			time.sleep(1) # Pause 1 second to get a new time stamp.
-		self.assertEqual(self.deck.getCardRecord('Zombie Chow'), (1, 2))
+		conditions = {
+			'CARD REC' 	: "Zombie Chow"
+			}
+		self.assertEqual(self.deck.getCardRecord(conditions), (1, 2))
 
 	def test_cardWithApostrophe(self):
 		for i in range(0,1):
@@ -219,7 +222,10 @@ class Test_getPastResults(TestCase):
 			recordAction(game_id, "N'Zoth", 'DRAW', 0)
 			finishGame(game_id, result = 0)
 			time.sleep(1) # Pause 1 second to get a new time stamp.
-		self.assertEqual(self.deck.getCardRecord("Vol'jin"), (1, 0))
+		conditions = {
+			'CARD REC' 	: "Vol'jin"
+			}
+		self.assertEqual(self.deck.getCardRecord(conditions), (1, 0))
 
 	def test_mulliganRecord(self):
 		for i in range(0,3):
