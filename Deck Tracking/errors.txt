@@ -1,24 +1,13 @@
 
 			The error was:
-				near "jin": syntax error
+				no such column: turn
 			The Query was:
-				SELECT DISTINCT win, game_id
-			FROM tgames NATURAL JOIN tplays
+				SELECT win, game_id
+			FROM tgames
 			
 WHERE(
-(deck_id=27
-OR deck_id=5)
-AND ((
-			cardname = 'Vol'jin'
-			AND action = 'PLAY'
-			)
-OR (
-			cardname = 'Vol'jin'
-			AND action = 'PULL - DECK'
-			)
-OR (
-			cardname = 'Vol'jin'
-			AND action = 'PULL - HAND'
-			)
-)
+(deck_id=1)
+AND (opp_hero = 'Hunter')
+AND (opp_deck = 'Face')
+AND (turn = '0')
 )

@@ -47,7 +47,7 @@ class Test_getPastResults(TestCase):
 			recordAction(game_id, 'DUMMY', 'DUMMY', 0)
 			finishGame(game_id, result = 0)
 			time.sleep(1) # Pause 1 second to get a new time stamp.
-		self.assertEqual(self.deck.getPastResults(), (0, 5))
+		self.assertEqual(self.deck.getCardRecord(), (0, 5))
 
 	def test_5and0(self):
 		for i in range(0,5):
@@ -55,7 +55,7 @@ class Test_getPastResults(TestCase):
 			recordAction(game_id, 'DUMMY', 'DUMMY', 0)
 			finishGame(game_id, result = 1)
 			time.sleep(1) # Pause 1 second to get a new time stamp.
-		self.assertEqual(self.deck.getPastResults(), (5, 0))
+		self.assertEqual(self.deck.getCardRecord(), (5, 0))
 
 	def test_2and4(self):
 		for i in range(0,2):
@@ -68,7 +68,7 @@ class Test_getPastResults(TestCase):
 			recordAction(game_id, 'DUMMY', 'DUMMY', 0)
 			finishGame(game_id, result = 0)
 			time.sleep(1) # Pause 1 second to get a new time stamp.
-		self.assertEqual(self.deck.getPastResults(), (2, 4))
+		self.assertEqual(self.deck.getCardRecord(), (2, 4))
 
 	def test_2and0card(self):
 		for i in range(0,2):
@@ -82,7 +82,7 @@ class Test_getPastResults(TestCase):
 			finishGame(game_id, result = 0)
 			time.sleep(1) # Pause 1 second to get a new time stamp.
 		conditions = {'PLAY' : 'DUMMY'}
-		self.assertEqual(self.deck.getPastResults(conditions), (2, 0))
+		self.assertEqual(self.deck.getCardRecord(conditions), (2, 0))
 
 	def test_3and1card(self):
 		for i in range(0,3):
@@ -106,7 +106,7 @@ class Test_getPastResults(TestCase):
 			finishGame(game_id, result = 1)
 			time.sleep(1) # Pause 1 second to get a new time stamp.
 		conditions = {'PLAY' : 'DUMMY'}
-		self.assertEqual(self.deck.getPastResults(conditions), (3, 1))
+		self.assertEqual(self.deck.getCardRecord(conditions), (3, 1))
 
 	def test_facehunter2and0(self):
 		for i in range(0,2):
@@ -123,7 +123,7 @@ class Test_getPastResults(TestCase):
 			'opp_hero' : 'Hunter',
 			'opp_deck' : 'Face'
 			}
-		self.assertEqual(self.deck.getPastResults(conditions), (2, 0))
+		self.assertEqual(self.deck.getCardRecord(conditions), (2, 0))
 
 	def test_faceshaman3and1(self):
 		for i in range(0,3):
@@ -150,7 +150,7 @@ class Test_getPastResults(TestCase):
 			'opp_hero' : 'Shaman',
 			'opp_deck' : 'Face'
 			}
-		self.assertEqual(self.deck.getPastResults(conditions), (3, 1))
+		self.assertEqual(self.deck.getCardRecord(conditions), (3, 1))
 
 	def test_facehunter2and1withChow(self):
 		for i in range(0,2):
@@ -183,7 +183,7 @@ class Test_getPastResults(TestCase):
 			'opp_deck' 	: 'Face',
 			'PLAY'		: 'Zombie Chow'
 			}
-		self.assertEqual(self.deck.getPastResults(conditions), (2, 1))
+		self.assertEqual(self.deck.getCardRecord(conditions), (2, 1))
 
 	def test_1and2record(self):
 		for i in range(0,1):

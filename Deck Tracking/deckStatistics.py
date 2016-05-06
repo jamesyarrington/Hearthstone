@@ -14,73 +14,6 @@ class Deck:
 		self.rev_dict = getAllRevs(self.deckName, self.hero)
 		self.all_ids = list(self.rev_dict.keys())
 
-	# return a (wins, losses) tuple based on the given conditions.
-	def getPastResults(self, conditions = {}, conn = None, curs = None):
-
-		conn, curs, new = checkConn(conn, curs)
-		# First build the SELECT clause.
-		selectClause = '''SELECT DISTINCT win, game_id
-			FROM tgames NATURAL JOIN tplays
-			'''
-
-		# Then build the WHERE clause.
-
-		conditionList = []
-
-		stringIDs = [str(i) for i in self.all_ids]
-		conditionList += [
-			listToString(stringIDs,
-				beginsWith = 'deck_id=',
-				endsWith = '',
-				delim = '\nOR deck_id='
-				)
-			]
-
-		cardConditionList = []
-
-		cardConditionList += getCardActionStatement(conditions, 'PLAY')
-		cardConditionList += getCardActionStatement(conditions, 'DRAW')
-		cardConditionList += getCardActionStatement(conditions, 'DISCARD - DECK')
-		cardConditionList += getCardActionStatement(conditions, 'DISCARD - HAND')
-		cardConditionList += getCardActionStatement(conditions, 'PULL - DECK')
-		cardConditionList += getCardActionStatement(conditions, 'PULL - HAND')
-
-		cardConditionClause = listToString(cardConditionList,
-			beginsWith = '(',
-			endsWith = ')\n',
-			delim = ')\nOR ('
-			)
-
-		if cardConditionClause:
-			conditionList += [cardConditionClause]
-
-		conditionList += getGameInfoStatement(conditions, 'opp_hero')
-		conditionList += getGameInfoStatement(conditions, 'opp_deck')
-		conditionList += getGameInfoStatement(conditions, 'game_mode')
-		conditionList += getGameInfoStatement(conditions, 'turn')
-
-		whereClause = listToString(conditionList,
-			beginsWith = '\nWHERE(\n(',
-			endsWith = ')\n)',
-			delim = ')\nAND ('
-			)
-
-		# Then execute the query.
-
-		selectQuery = selectClause + whereClause
-
-		executeQuery(curs, selectQuery)
-		results = [i[0] for i in curs.fetchall()]
-
-		# Then count the wins (1) and losses (0).
-
-		wins = results.count(1)
-		losses = results.count(0)
-
-		if new: conn.close()
-
-		return (wins, losses)
-
 	# # returns a (wins, losses) tuple for a specific card in the deck.
 	# # A win only counts if the card was played (or pulled).
 	# # A loss counts if the card was drawn (or pulled from deck).
@@ -100,14 +33,55 @@ class Deck:
 
 	# 	return (wins, losses)
 
+	# return a list of (game_id, result) tuples based on the given conditions.
+	def getPastResults(self, conditions = {}, conn = None, curs = None):
+
+		conn, curs, new = checkConn(conn, curs)
+		# First build the SELECT clause.
+		selectClause = '''SELECT game_id, win
+			FROM tgames
+			'''
+		# Then build the WHERE clause.
+
+		conditionList = []
+
+		stringIDs = [str(i) for i in self.all_ids]
+		conditionList += [
+			listToString(stringIDs,
+				beginsWith = 'deck_id=',
+				endsWith = '',
+				delim = '\nOR deck_id='
+				)
+			]
+
+		conditionList += getGameInfoStatement(conditions, 'opp_hero')
+		conditionList += getGameInfoStatement(conditions, 'opp_deck')
+		conditionList += getGameInfoStatement(conditions, 'game_mode')
+		conditionList += getGameInfoStatement(conditions, 'turn')
+
+		whereClause = listToString(conditionList,
+			beginsWith = '\nWHERE(\n(',
+			endsWith = ')\n)',
+			delim = ')\nAND ('
+			)
+
+		# Then execute the query.
+
+		selectQuery = selectClause + whereClause
+
+		executeQuery(curs, selectQuery)
+
+		return curs.fetchall()
+
 
 	# returns a (wins, losses) tuple for a specific card in the deck, if 'CARD REC' is in the dict.
 	# A win only counts if the card was played (or pulled).
 	# A loss counts if the card was drawn (or pulled from deck).
 	def getCardRecord(self, conditions = {}):
-		try: cardName = conditions['CARD REC']
-		except: return self.getPastResults(conditions)
-		else:
+		pastResults = self.getPastResults(conditions)
+
+		if 'CARD REC' in conditions:
+			cardName = conditions['CARD REC']
 			winConditions = copyDict(conditions)
 			lossConditions = copyDict(conditions)
 
@@ -118,7 +92,23 @@ class Deck:
 			lossConditions['DRAW'] = cardName
 			lossConditions['PULL - DECK'] = cardName
 
-			return (self.getPastResults(winConditions)[0], self.getPastResults(lossConditions)[1])
+			adjustedResults = []
+
+			for (game_id, result) in pastResults:
+
+				# Choose conditions based on win or loss.
+				if result:
+					cardConditions = winConditions
+				else:
+					cardConditions = lossConditions
+
+				# Keep the record if it matches the card requirements.
+				if checkCardConditions(game_id, cardConditions):
+					adjustedResults += (game_id, result)
+
+			pastResults = adjustedResults
+
+		return getRecord(pastResults)
 
 
 	# Returns a (wins, losses) tuple for when the card was drawn on turn 0 or 1.
@@ -134,6 +124,7 @@ class Deck:
 		(wins_t1, losses_t1) = self.getPastResults(conditions)
 
 		return (wins + wins_t1, losses + losses_t1)
+
 
 
 # Create a copy of a dictionary.  copy does not share memory address.
@@ -180,3 +171,43 @@ def getGameInfoStatement(conditions, field):
 	try: data = conditions[field]
 	except: return []
 	else: return ["%s = '%s'" % (field, data)]
+
+# Check if a game meets the card-based conditions provided.
+def checkCardConditions(game_id, conditions = {}, conn = None, curs = None):
+
+	conn, curs, new = checkConn(conn, curs)
+
+	selectClause = '''SELECT game_id
+		FROM tgames NATURAL JOIN tplays
+		'''
+
+	conditionList = ['game_id = "%s"' % game_id]
+
+	conditionList += getCardActionStatement(conditions, 'PLAY')
+	conditionList += getCardActionStatement(conditions, 'DRAW')
+	conditionList += getCardActionStatement(conditions, 'DISCARD - DECK')
+	conditionList += getCardActionStatement(conditions, 'DISCARD - HAND')
+	conditionList += getCardActionStatement(conditions, 'PULL - DECK')
+	conditionList += getCardActionStatement(conditions, 'PULL - HAND')
+
+	whereClause = listToString(conditionList,
+		beginsWith = '\nWHERE(\n(',
+		endsWith = ')\n)',
+		delim = ')\nAND ('
+		)
+
+	selectQuery = selectClause + whereClause
+
+	executeQuery(curs, selectQuery)
+
+	# Return true if the game meets the criteria (query returns a result).
+	meetsConditions = curs.fetchone()[0] == game_id
+
+	if new: conn.close()
+
+	return meetsConditions
+
+# Formats a list of (game_id, result) tuples into a (wins, losses) tuple.
+def getRecord(results):
+	# Count the wins (1) and losses (1) in the remaining results.
+	return (results.count(1), results.count(0))
