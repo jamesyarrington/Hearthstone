@@ -14,25 +14,6 @@ class Deck:
 		self.rev_dict = getAllRevs(self.deckName, self.hero)
 		self.all_ids = list(self.rev_dict.keys())
 
-	# # returns a (wins, losses) tuple for a specific card in the deck.
-	# # A win only counts if the card was played (or pulled).
-	# # A loss counts if the card was drawn (or pulled from deck).
-	# def getCardRecord(self, cardName, conditions = {}):
-	# 	winConditions = copyDict(conditions)
-	# 	lossConditions = copyDict(conditions)
-
-	# 	winConditions['PLAY'] = cardName
-	# 	winConditions['PULL - HAND'] = cardName
-	# 	winConditions['PULL - DECK'] = cardName
-
-	# 	lossConditions['DRAW'] = cardName
-	# 	lossConditions['PULL - DECK'] = cardName
-
-	# 	wins = self.getPastResults(winConditions)[0]
-	# 	losses = self.getPastResults(lossConditions)[1]
-
-	# 	return (wins, losses)
-
 	# return a list of (game_id, result) tuples based on the given conditions.
 	def getPastResults(self, conditions = {}, conn = None, curs = None):
 
@@ -104,7 +85,7 @@ class Deck:
 
 				# Keep the record if it matches the card requirements.
 				if checkCardConditions(game_id, cardConditions):
-					adjustedResults += (game_id, result)
+					adjustedResults += [(game_id, result)]
 
 			pastResults = adjustedResults
 
@@ -201,7 +182,7 @@ def checkCardConditions(game_id, conditions = {}, conn = None, curs = None):
 	executeQuery(curs, selectQuery)
 
 	# Return true if the game meets the criteria (query returns a result).
-	meetsConditions = curs.fetchone()[0] == game_id
+	meetsConditions = curs.fetchone() is not None
 
 	if new: conn.close()
 
@@ -209,5 +190,6 @@ def checkCardConditions(game_id, conditions = {}, conn = None, curs = None):
 
 # Formats a list of (game_id, result) tuples into a (wins, losses) tuple.
 def getRecord(results):
+	results = [result[1] for result in results]
 	# Count the wins (1) and losses (1) in the remaining results.
 	return (results.count(1), results.count(0))

@@ -2,7 +2,7 @@
 			The error was:
 				no such column: turn
 			The Query was:
-				SELECT win, game_id
+				SELECT game_id, win
 			FROM tgames
 			
 WHERE(
