@@ -38,7 +38,6 @@ class Deck:
 		conditionList += getGameInfoStatement(conditions, 'opp_hero')
 		conditionList += getGameInfoStatement(conditions, 'opp_deck')
 		conditionList += getGameInfoStatement(conditions, 'game_mode')
-		conditionList += getGameInfoStatement(conditions, 'turn')
 
 		whereClause = listToString(conditionList,
 			beginsWith = '\nWHERE(\n(',
@@ -59,35 +58,38 @@ class Deck:
 	# A win only counts if the card was played (or pulled).
 	# A loss counts if the card was drawn (or pulled from deck).
 	def getCardRecord(self, conditions = {}):
-		pastResults = self.getPastResults(conditions)
-
+		# Create the different conditions for when a card contributes to a win or loss.
 		if 'CARD REC' in conditions:
 			cardName = conditions['CARD REC']
 			winConditions = copyDict(conditions)
 			lossConditions = copyDict(conditions)
 
 			winConditions['PLAY'] = cardName
-			winConditions['PULL - HAND'] = cardName
-			winConditions['PULL - DECK'] = cardName
+			# winConditions['PULL - HAND'] = cardName
+			# winConditions['PULL - DECK'] = cardName
 
 			lossConditions['DRAW'] = cardName
-			lossConditions['PULL - DECK'] = cardName
+			# lossConditions['PULL - DECK'] = cardName
 
-			adjustedResults = []
+		pastResults = self.getPastResults(conditions)
+		adjustedResults = []
 
-			for (game_id, result) in pastResults:
+		for (game_id, result) in pastResults:
 
-				# Choose conditions based on win or loss.
+			cardConditions = conditions
+
+			if 'CARD REC' in conditions:
+
 				if result:
 					cardConditions = winConditions
 				else:
 					cardConditions = lossConditions
 
-				# Keep the record if it matches the card requirements.
-				if checkCardConditions(game_id, cardConditions):
-					adjustedResults += [(game_id, result)]
+			# Keep the record if it matches the card requirements.
+			if checkCardConditions(game_id, cardConditions):
+				adjustedResults += [(game_id, result)]
 
-			pastResults = adjustedResults
+		pastResults = adjustedResults
 
 		return getRecord(pastResults)
 
@@ -98,11 +100,11 @@ class Deck:
 		conditions['DRAW'] = cardName
 		conditions['turn'] = 0
 
-		(wins, losses) = self.getPastResults(conditions)
+		(wins, losses) = self.getCardRecord(conditions)
 
 		conditions['turn'] = 1
 
-		(wins_t1, losses_t1) = self.getPastResults(conditions)
+		(wins_t1, losses_t1) = self.getCardRecord(conditions)
 
 		return (wins + wins_t1, losses + losses_t1)
 
@@ -163,6 +165,7 @@ def checkCardConditions(game_id, conditions = {}, conn = None, curs = None):
 		'''
 
 	conditionList = ['game_id = "%s"' % game_id]
+	conditionList += getGameInfoStatement(conditions, 'turn')
 
 	conditionList += getCardActionStatement(conditions, 'PLAY')
 	conditionList += getCardActionStatement(conditions, 'DRAW')
@@ -170,6 +173,7 @@ def checkCardConditions(game_id, conditions = {}, conn = None, curs = None):
 	conditionList += getCardActionStatement(conditions, 'DISCARD - HAND')
 	conditionList += getCardActionStatement(conditions, 'PULL - DECK')
 	conditionList += getCardActionStatement(conditions, 'PULL - HAND')
+
 
 	whereClause = listToString(conditionList,
 		beginsWith = '\nWHERE(\n(',
