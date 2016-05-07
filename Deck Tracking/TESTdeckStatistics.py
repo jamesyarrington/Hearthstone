@@ -262,6 +262,101 @@ class Test_getPastResults(TestCase):
 			}
 		self.assertEqual(self.deck.getMulliganRecord("Zombie Chow", conditions), (2, 0))
 
+	def test_playDoubleRecord(self):
+		for i in range(0,2):
+			game_id = startGame(self.deck_id)
+			recordAction(game_id, "Zombie Chow", 'PLAY', 0)
+			recordAction(game_id, "Zombie Chow", 'PLAY', 1)
+			finishGame(game_id, result = 1, opponentHero = 'Hunter', opponentDeck = 'Face')
+			time.sleep(1) # Pause 1 second to get a new time stamp.
+		for i in range(0,1):
+			game_id = startGame(self.deck_id)
+			recordAction(game_id, "Zombie Chow", 'DRAW', 0)
+			recordAction(game_id, "Zombie Chow", 'DRAW', 1)
+			finishGame(game_id, result = 0, opponentHero = 'Hunter', opponentDeck = 'Face')
+			time.sleep(1) # Pause 1 second to get a new time stamp.
+		for i in range(0,1):
+			game_id = startGame(self.deck_id)
+			recordAction(game_id, "Zombie Chow", 'PLAY', 0)
+			recordAction(game_id, "Zombie Chow", 'DRAW', 1)
+			finishGame(game_id, result = 1, opponentHero = 'Hunter', opponentDeck = 'Face')
+			time.sleep(1) # Pause 1 second to get a new time stamp.
+		for i in range(0,3):
+			game_id = startGame(self.deck_id)
+			recordAction(game_id, "Leper Gnome", 'DRAW', 0)
+			recordAction(game_id, "Leper Gnome", 'DRAW', 1)
+			finishGame(game_id, result = 0, opponentHero = 'Hunter', opponentDeck = 'Face')
+			time.sleep(1) # Pause 1 second to get a new time stamp.
+		conditions = {
+			'CARD REC'	: "Zombie Chow"
+			}
+		self.assertEqual(self.deck.getCardRecord(conditions, number = 2), (2, 1))
+
+	def test_getRecord(self):
+		results = [
+			(0, 0),
+			(1, 1),
+			(2, 0),
+			(3, 0)
+		]
+		self.assertEqual(getRecord(results), (1, 3))
+
+	def test_copyDict(self):
+		origDict = {
+			'card'		: 'Zombie Chow',
+			'mana'		: 1,
+			'attack'	: 2,
+			'health'	: 3,
+			'text'		: 'Deathrattle: Blah'
+		}
+		newDict = copyDict(origDict)
+		self.assertEqual(newDict, origDict, msg = 'The dictionaries are not equal after copying.')
+		origDict['card'] = 'Leper Gnome'
+		self.assertNotEqual(newDict, origDict, msg = 'The new dictionary changed after an edit to the original.')
+		anotherDict = copyDict(origDict)
+		anotherDict['attack'] = 1
+		self.assertNotEqual(anotherDict, origDict, msg = 'The original dictionary changed after an edit to the new one.')
+
+	def test_listToString(self):
+		stringList = [
+			'A',
+			'Ayyy',
+			'Eh?',
+			'e'
+		]
+		formattedString = listToString(stringList,
+			beginsWith = 'The "A" sounds are: ',
+			endsWith = '.',
+			delim = ' & '
+		)
+		self.assertEqual(formattedString, 'The "A" sounds are: A & Ayyy & Eh? & e.')
+
+	def test_getGameInfoStatement(self):
+		conditions = {
+			'cardName'	: 'Leper Gnome',
+			'opp_hero'	: 'Hunter',
+			'turn'		: '5'
+		}
+		statement = getGameInfoStatement(conditions, 'cardName')
+		self.assertEqual(statement, ["cardName = 'Leper Gnome'"])
+		statement = getGameInfoStatement(conditions, 'opp_deck')
+		self.assertEqual(statement, [], msg = 'Failure when a non-existent key used.')
+
+	def test_getCardActionStatement(self):
+		conditions = {
+			'PLAY'	: 'Zombie Chow',
+			'DRAW'  : 'Leper Gnome'
+		}
+		statement = getCardActionStatement(conditions, 'PLAY')
+		self.assertEqual(statement, ['''
+			cardname = "Zombie Chow"
+			AND action = "PLAY"
+			''']
+		)
+		statement = getCardActionStatement(conditions, 'DISCARD')
+		self.assertEqual(statement, [], msg = 'Failure when a non-existent key used.')
+
+
 
 
 suite = TestLoader().loadTestsFromTestCase(Test_getPastResults)

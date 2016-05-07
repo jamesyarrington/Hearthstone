@@ -57,7 +57,7 @@ class Deck:
 	# returns a (wins, losses) tuple for a specific card in the deck, if 'CARD REC' is in the dict.
 	# A win only counts if the card was played (or pulled).
 	# A loss counts if the card was drawn (or pulled from deck).
-	def getCardRecord(self, conditions = {}):
+	def getCardRecord(self, conditions = {}, number = 1):
 		# Create the different conditions for when a card contributes to a win or loss.
 		if 'CARD REC' in conditions:
 			cardName = conditions['CARD REC']
@@ -86,7 +86,7 @@ class Deck:
 					cardConditions = lossConditions
 
 			# Keep the record if it matches the card requirements.
-			if checkCardConditions(game_id, cardConditions):
+			if checkCardConditions(game_id, cardConditions, number):
 				adjustedResults += [(game_id, result)]
 
 		pastResults = adjustedResults
@@ -146,7 +146,7 @@ def getCardActionStatement(conditions, action):
 	else:
 		return ['''
 			cardname = "%s"
-			AND action = '%s'
+			AND action = "%s"
 			''' % (playedCard, action)]
 
 # Return a single element list in the form ["opp_hero = 'Hunter'"]
@@ -156,7 +156,7 @@ def getGameInfoStatement(conditions, field):
 	else: return ["%s = '%s'" % (field, data)]
 
 # Check if a game meets the card-based conditions provided.
-def checkCardConditions(game_id, conditions = {}, conn = None, curs = None):
+def checkCardConditions(game_id, conditions = {}, number = 1, conn = None, curs = None):
 
 	conn, curs, new = checkConn(conn, curs)
 
@@ -185,7 +185,11 @@ def checkCardConditions(game_id, conditions = {}, conn = None, curs = None):
 
 	executeQuery(curs, selectQuery)
 
-	# Return true if the game meets the criteria (query returns a result).
+	# Consume query results so that the test below determines if the card was played X times.
+	for i in range(number - 1):
+		curs.fetchone()
+
+	# Return true if the game meets the criteria (query returns a result).	
 	meetsConditions = curs.fetchone() is not None
 
 	if new: conn.close()
