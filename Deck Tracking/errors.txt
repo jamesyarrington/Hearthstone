@@ -1,13 +1,10 @@
 
 			The error was:
-				no such column: turn
+				no such table: tgames
 			The Query was:
-				SELECT game_id, win
-			FROM tgames
-			
-WHERE(
-(deck_id=1)
-AND (opp_hero = 'Hunter')
-AND (opp_deck = 'Face')
-AND (turn = '0')
-)
+				SELECT game_id, win, opp_hero, opp_deck
+		FROM tgames
+		WHERE game_mode = "Standard Ranked"
+		ORDER BY `time` DESC
+		LIMIT 20
+		

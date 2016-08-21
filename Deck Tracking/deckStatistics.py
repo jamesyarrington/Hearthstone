@@ -48,10 +48,12 @@ class Deck:
 		# Then execute the query.
 
 		selectQuery = selectClause + whereClause
-
 		executeQuery(curs, selectQuery)
+		results = curs.fetchall()
 
-		return curs.fetchall()
+		if new: conn.close()
+
+		return results
 
 
 	# returns a (wins, losses) tuple for a specific card in the deck, if 'CARD REC' is in the dict.
@@ -230,3 +232,29 @@ def percentage(record):
 
 def recordString(record):
 	return "%2.0f - %2.0f (%3.0f%%)" % (record[0], record[1], 100*percentage(record))
+
+
+# Return the results of the last 'number' games (game_id, win, opp_hero, opp_deck)
+def getLastGames(number, mode = 'Standard Ranked', conn = None, curs = None):
+
+	conn, curs, new = checkConn(conn, curs)
+
+	selectQuery = '''SELECT game_id, win, opp_hero, opp_deck
+		FROM tgames
+		WHERE game_mode = "%s"
+		ORDER BY `time` DESC
+		LIMIT %s
+		''' % (mode, number)
+
+	executeQuery(curs, selectQuery)
+	results = curs.fetchall()
+	if new: conn.close()
+
+	return results
+
+def sortedLastGames(results):
+	justOpp = [(game[2], game[3]) for game in results]
+	gameSet = set(justOpp)
+	gameList = [(justOpp.count(opp), opp[0], opp[1]) for opp in gameSet]
+	gameList.sort(reverse = True)
+	return gameList
