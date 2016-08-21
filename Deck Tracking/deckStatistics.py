@@ -10,7 +10,7 @@ class Deck:
 		elif deckName:
 			self.deckName = deckName
 			self.hero = hero
-			getDecks(deckName, hero)
+			self.deck_id = getDecks(deckName, hero)
 		self.rev_dict = getAllRevs(self.deckName, self.hero)
 		self.all_ids = list(self.rev_dict.keys())
 
@@ -92,6 +92,25 @@ class Deck:
 		pastResults = adjustedResults
 
 		return getRecord(pastResults)
+
+	# Function for sorting a list of(wins, losses) tuples.
+	def winPercentage(self, record):
+		return percentage(record[1])
+
+	# Cycle through all cards currently in the deck.
+	def getAllCardRecords(self, conditions = {}, threshold = 1):
+
+		recordList = []
+		for cardName in [card[0] for card in getCardList(self.deck_id)]:
+			conditions['CARD REC'] = cardName
+			record = self.getCardRecord(conditions)
+			if record[0] + record[1] >= threshold:
+				recordList += [(cardName, record, self.getCardRecord(conditions, 2), self.getMulliganRecord(cardName))]
+
+		recordList.sort(key = self.winPercentage, reverse = True)
+
+		return recordList
+
 
 
 	# Returns a (wins, losses) tuple for when the card was drawn on turn 0 or 1.
@@ -201,3 +220,13 @@ def getRecord(results):
 	results = [result[1] for result in results]
 	# Count the wins (1) and losses (1) in the remaining results.
 	return (results.count(1), results.count(0))
+
+def percentage(record):
+	total = record[0] + record[1]
+	if total:
+		return record[0]/total
+	else:
+		return 0
+
+def recordString(record):
+	return "%2.0f - %2.0f (%3.0f%%)" % (record[0], record[1], 100*percentage(record))

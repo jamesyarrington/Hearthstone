@@ -392,9 +392,9 @@ class DeckStats:
 		
 		self.t = StringVar()
 
-		self.overallRecord = Label(self.master, textvariable = self.t)
+		self.overallRecord = Label(self.master, textvariable = self.t, font=("Courier", 10), anchor = 'nw')
 		self.overallRecord.pack()
-		self.overallRecord.place(x = 5, y = 5, height = 50, width = 100)
+		self.overallRecord.place(x = 5, y = 250, height = 1000, width = 1000)
 
 		self.options = CheckButtonList(self.master, self.refreshResults,
 				[
@@ -415,7 +415,15 @@ class DeckStats:
 		for i, pressed in enumerate(self.options.pressedButtons):
 			if pressed.get():
 				conditions[pressed.get()] = self.options.entryFields[i].get()
-		self.t.set('Wins:     %s\nLosses:   %s' % self.deck.getCardRecord(conditions))
+		overall = 'Wins:     %s\nLosses:   %s' % self.deck.getCardRecord(conditions)
+		allCardRecords = self.deck.getAllCardRecords(conditions)
+		recordListString = overall + '\n           Name            |     Record     |   Dup Record   |   Mul Record   '
+		for card in allCardRecords:
+			row = card[0].ljust(25)
+			for record in card[1:]:
+				row += ' | ' + recordString(record)
+			recordListString += '\n' + row
+		self.t.set(recordListString)
 
 
 # Accept a list of {label : '', on_value : ''} dicts to create a multi-selection checkbutton list.
@@ -430,7 +438,7 @@ class CheckButtonList:
 
 		width = 125
 		height = 25
-		x = 200
+		x = 5
 		y = 5
 
 		for i, selection in enumerate(selections):
