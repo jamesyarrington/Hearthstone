@@ -390,11 +390,17 @@ class DeckStats:
 
 		self.deck = Deck(deck_id)
 		
-		self.t = StringVar()
+		self.recordText = StringVar()
 
-		self.overallRecord = Label(self.master, textvariable = self.t, font=("Courier", 10), anchor = 'nw')
-		self.overallRecord.pack()
-		self.overallRecord.place(x = 5, y = 250, height = 1000, width = 1000)
+		self.cardRecords = Label(self.master, textvariable = self.recordText, font=("Courier", 10), anchor = 'nw')
+		self.cardRecords.pack()
+		self.cardRecords.place(x = 5, y = 250, height = 1000, width = 750)
+
+		self.vsText = StringVar()
+
+		self.vsRecords = Label(self.master, textvariable = self.vsText, font=("Courier", 10), anchor = 'nw')
+		self.vsRecords.pack()
+		self.vsRecords.place(x = 755, y = 250, height = 1000, width = 1000)
 
 		self.options = CheckButtonList(self.master, self.refreshResults,
 				[
@@ -415,15 +421,32 @@ class DeckStats:
 		for i, pressed in enumerate(self.options.pressedButtons):
 			if pressed.get():
 				conditions[pressed.get()] = self.options.entryFields[i].get()
-		overall = 'Wins:     %s\nLosses:   %s' % self.deck.getCardRecord(conditions)
-		allCardRecords = self.deck.getAllCardRecords(conditions)
+		overall = recordString(self.deck.getCardRecord(conditions))
+
+		cardConditions = copyDict(conditions)
+		vsConditions = copyDict(conditions)
+
+		allCardRecords = self.deck.getAllCardRecords(cardConditions)
 		recordListString = overall + '\n           Name            |     Record     |   Dup Record   |   Mul Record   '
 		for card in allCardRecords:
 			row = card[0].ljust(25)
 			for record in card[1:]:
 				row += ' | ' + recordString(record)
 			recordListString += '\n' + row
-		self.t.set(recordListString)
+
+		self.recordText.set(recordListString)
+
+		lastGames = sortedLastGames(20, vsConditions.get('game_mode'))
+
+		oppListString = ''
+		for opp in lastGames:
+			vsConditions['opp_hero'] = opp[1]
+			vsConditions['opp_deck'] = opp[2]
+			oppString = '{2} {1} ({0}): '.format(*opp)
+			vsRecord = recordString(self.deck.getCardRecord(vsConditions))
+			oppListString += oppString.rjust(25) + vsRecord + '\n'
+
+		self.vsText.set(oppListString)
 
 
 # Accept a list of {label : '', on_value : ''} dicts to create a multi-selection checkbutton list.

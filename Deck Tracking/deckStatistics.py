@@ -174,7 +174,7 @@ def getCardActionStatement(conditions, action):
 def getGameInfoStatement(conditions, field):
 	try: data = conditions[field]
 	except: return []
-	else: return ["%s = '%s'" % (field, data)]
+	else: return ["%s = \"%s\"" % (field, data)]
 
 # Check if a game meets the card-based conditions provided.
 def checkCardConditions(game_id, conditions = {}, number = 1, conn = None, curs = None):
@@ -230,8 +230,11 @@ def percentage(record):
 	else:
 		return 0
 
-def recordString(record):
-	return "%2.0f - %2.0f (%3.0f%%)" % (record[0], record[1], 100*percentage(record))
+def recordString(record, thresh = 1):
+	if record[0] + record[1] >= thresh:
+		return "%2.0f - %2.0f (%3.0f%%)" % (record[0], record[1], 100*percentage(record))
+	else:
+		return "-- -- --".center(14)
 
 
 # Return the results of the last 'number' games (game_id, win, opp_hero, opp_deck)
@@ -252,8 +255,10 @@ def getLastGames(number, mode = 'Standard Ranked', conn = None, curs = None):
 
 	return results
 
-def sortedLastGames(results):
-	justOpp = [(game[2], game[3]) for game in results]
+def sortedLastGames(number, mode = 'Standard Ranked'):
+	if not mode:
+		mode = 'Standard Ranked'
+	justOpp = [(game[2], game[3]) for game in getLastGames(number, mode)]
 	gameSet = set(justOpp)
 	gameList = [(justOpp.count(opp), opp[0], opp[1]) for opp in gameSet]
 	gameList.sort(reverse = True)
